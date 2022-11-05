@@ -1,5 +1,41 @@
 version: "3.9"
 
+x-common-env: &common-env
+  MYAPP_MONGO_URL: mongodb://mongo:27017/
+  MYAPP_MONGO_DATABASE: linebot
+  MYAPP_LINE_CHANNEL_SECRET: ${LINE_CHANNEL_SECRET}
+  MYAPP_LINE_CHANNEL_TOKEN: ${LINE_CHANNEL_TOKEN}
+  MYAPP_MIGRATION_SOURCE: file:///bin/app/static/migrations
+  MYAPP_MIGRATION_URL: mongodb://mongo:27017/linebot
+
 services:
   mongo:
     image: mongo:5
+    environment:
+      <<: *common-env
+    ports:
+      - 27017:27017
+
+  linebot-serve:
+    image: amikai/line-bot-prac:1.0
+    environment:
+      <<: *common-env
+    command:
+      - /cmd
+      - linebot
+      - serve
+    depends_on:
+      - mongo
+    ports:
+      - 9999:9999
+
+  linebot-migration:
+    image: amikai/line-bot-prac:1.0
+    environment:
+      <<: *common-env
+    command:
+      - /cmd
+      - linebot
+      - migration
+    depends_on:
+      - mongo
