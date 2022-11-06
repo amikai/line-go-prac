@@ -3,7 +3,7 @@ package linebotkit
 import (
 	"context"
 
-	"github.com/line/line-bot-sdk-go/v7/linebot"
+	"github.com/line/line-bot-sdk-go/linebot"
 	"go.uber.org/zap"
 
 	"github.com/amikai/line-go-prac/pkg/logkit"
