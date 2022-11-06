@@ -3,12 +3,17 @@ package bot
 import (
 	"context"
 	"log"
+	"net/http"
 
 	"github.com/spf13/cobra"
 
 	"github.com/amikai/line-go-prac/config"
+	"github.com/amikai/line-go-prac/internal/dao"
+	"github.com/amikai/line-go-prac/internal/linebot"
+	"github.com/amikai/line-go-prac/pkg/ginkit"
 	"github.com/amikai/line-go-prac/pkg/linebotkit"
 	"github.com/amikai/line-go-prac/pkg/logkit"
+	"github.com/amikai/line-go-prac/pkg/mongokit"
 )
 
 func newBotCommand() *cobra.Command {
@@ -40,15 +45,37 @@ func runBot(_ *cobra.Command, _ []string) error {
 	}()
 	ctx = logger.WithContext(ctx)
 
-	var _ *linebotkit.LinebotClient
+	var mongoClient *mongokit.MongoClient
+	{
+		mongoConfig := &mongokit.MongoConfig{
+			URL:      conf.Mongo.URL,
+			Database: conf.Mongo.Database,
+		}
+		mongoClient = mongokit.NewMongoClient(ctx, mongoConfig)
+	}
+
+	messageDAO := dao.NewMongoMessageDAO(mongoClient)
+
+	var linebotClient *linebotkit.LinebotClient
 	{
 		linebotConfig := &linebotkit.LinebotConfig{
 			ChannelSecret: conf.Linebot.Channel.Secret,
 			ChannelToken:  conf.Linebot.Channel.Token,
 		}
-		_ = linebotkit.NewClient(ctx, linebotConfig)
+		linebotClient = linebotkit.NewClient(ctx, linebotConfig)
 	}
 
-	// TODO: create gin server to reply message from line
+	linebotService := linebot.NewEchoService(messageDAO, linebotClient)
+	linebotGinHandler := linebot.NewGinHandler(linebotClient, linebotService, logger)
+
+	router := ginkit.Default(logger)
+	linebotGroup := router.Group("/linebot")
+	{
+		linebotGroup.POST("/webhook", linebotGinHandler.Webhook)
+		linebotGroup.GET("/user/:userID", linebotGinHandler.GetUserByID)
+	}
+
+	http.ListenAndServe(":9999", router)
+
 	return nil
 }
