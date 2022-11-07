@@ -29,7 +29,7 @@ func NewMongoMessageDAO(mongoClient *mongokit.MongoClient) *mongoMessageDAO {
 
 func (dao *mongoMessageDAO) GetByUserID(ctx context.Context, userID string, pagination MessagePagination) ([]*Message, error) {
 	findOpts := options.Find()
-	findOpts.SetSort(bson.D{{"created_at", 1}})
+	findOpts.SetSort(bson.M{"created_at": 1})
 
 	limit := pagination.Count
 	if pagination.Count > MaximunMessageCount {
@@ -38,9 +38,9 @@ func (dao *mongoMessageDAO) GetByUserID(ctx context.Context, userID string, pagi
 	findOpts.SetLimit(int64(limit))
 
 	mongoTime := primitive.NewDateTimeFromTime(pagination.After)
-	filter := bson.D{
-		{"created_at", bson.D{{"$gt", mongoTime}}},
-		{"sender_id", userID},
+	filter := bson.M{
+		"created_at": bson.M{"$gt": mongoTime},
+		"sender_id":  userID,
 	}
 
 	cursor, err := dao.client.Database().Collection(MessageCollection).Find(
