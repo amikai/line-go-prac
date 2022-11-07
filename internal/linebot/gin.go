@@ -39,14 +39,14 @@ func (g *Handler) Webhook(ctx *gin.Context) {
 		return
 	}
 	if err != nil {
-		abortWithErrMsg(ctx, http.StatusInternalServerError, err.Error())
+		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
 	for _, event := range events {
 		err = g.svc.HandleEvent(ctx.Request.Context(), event)
 		if err != nil {
-			ctx.abortWithErrMsg(http.StatusInternalServerError, err)
+			ctx.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
 	}
@@ -69,6 +69,7 @@ func (g *Handler) GetUserByID(ctx *gin.Context) {
 		After: time.Unix(req.After, 0),
 	})
 	if err != nil {
+		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
