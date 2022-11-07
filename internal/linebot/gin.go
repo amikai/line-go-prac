@@ -35,18 +35,18 @@ func NewGinHandler(
 func (g *Handler) Webhook(ctx *gin.Context) {
 	events, err := g.linebotClient.ParseRequest(ctx.Request)
 	if err == linebot.ErrInvalidSignature {
-		ctx.AbortWithStatus(http.StatusBadRequest)
+		abortWithError(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 	if err != nil {
-		ctx.AbortWithStatus(http.StatusInternalServerError)
+		abortWithError(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	for _, event := range events {
 		err = g.svc.HandleEvent(ctx.Request.Context(), event)
 		if err != nil {
-			ctx.AbortWithError(http.StatusInternalServerError, err)
+			abortWithError(ctx, http.StatusInternalServerError, "server error")
 			return
 		}
 	}
@@ -54,16 +54,24 @@ func (g *Handler) Webhook(ctx *gin.Context) {
 
 func (g *Handler) GetUserByID(ctx *gin.Context) {
 	var req GetUserByIDRequest
-
 	err := ctx.ShouldBindQuery(&req)
-	userID := ctx.Param("userID")
-	if err != nil || userID == "" {
-		ctx.AbortWithError(http.StatusBadRequest, err)
+	if err != nil {
+		abortWithError(ctx, http.StatusBadRequest, "bad request")
 	}
-	daoMessages, err := g.svc.GetUserByID(ctx.Request.Context(), userID, dao.MessagePagination{
+
+	userID := ctx.Param("userID")
+	if userID == "" {
+		abortWithError(ctx, http.StatusBadRequest, "missing user id")
+	}
+
+	daoMessages, err := g.svc.GetUserByID(ctx, userID, dao.MessagePagination{
 		Count: req.Count,
 		After: time.Unix(req.After, 0),
 	})
+	if err != nil {
+		abortWithError(ctx, http.StatusInternalServerError, "server error")
+		return
+	}
 
 	messages := make([]*Message, 0, len(daoMessages))
 	for _, daoMessage := range daoMessages {
@@ -76,4 +84,11 @@ func (g *Handler) GetUserByID(ctx *gin.Context) {
 		Messages: messages,
 	}
 	ctx.JSON(http.StatusOK, res)
+}
+
+func abortWithError(c *gin.Context, code int, message string) {
+	c.AbortWithStatusJSON(code, gin.H{
+		"code":    code,
+		"message": message,
+	})
 }
