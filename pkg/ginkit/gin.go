@@ -1,6 +1,7 @@
 package ginkit
 
 import (
+	"net/http"
 	"time"
 
 	ginzap "github.com/gin-contrib/zap"
@@ -14,4 +15,8 @@ func Default(logger *logkit.Logger) *gin.Engine {
 	r.Use(ginzap.Ginzap(logger.Logger, time.RFC3339, true))
 	r.Use(ginzap.RecoveryWithZap(logger.Logger, true))
 	return r
+}
+
+func HeartbeatHandler(c *gin.Context) {
+	c.AbortWithStatus(http.StatusOK)
 }

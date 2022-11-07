@@ -69,6 +69,7 @@ func runBot(_ *cobra.Command, _ []string) error {
 	linebotGinHandler := linebot.NewGinHandler(linebotClient, linebotService, logger)
 
 	router := ginkit.Default(logger)
+	router.GET("/healthz", ginkit.HeartbeatHandler)
 	linebotGroup := router.Group("/linebot")
 	{
 		linebotGroup.POST("/webhook", linebotGinHandler.Webhook)
