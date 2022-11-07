@@ -62,6 +62,8 @@ func (dao *mongoMessageDAO) GetByUserID(ctx context.Context, userID string, pagi
 }
 
 func (dao *mongoMessageDAO) Store(ctx context.Context, message *Message) error {
-	_, err := dao.client.Database().Collection(MessageCollection).InsertOne(ctx, message)
-	return fmt.Errorf("failed to store message: %w", err)
+	if _, err := dao.client.Database().Collection(MessageCollection).InsertOne(ctx, message); err != nil {
+		return fmt.Errorf("failed to store message: %w", err)
+	}
+	return nil
 }
