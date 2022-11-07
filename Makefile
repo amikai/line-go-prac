@@ -20,7 +20,7 @@ build:
 image:
 	$(DOCKER) build -f $(ROOT)/Dockerfile -t $(DOCKER_REPO)/line-bot-prac:$(TAG) $(ROOT)
 
-dc.run: d.build
+dc.run: image
 	$(DOCKER_COMPOSE) up
 
 clean:
