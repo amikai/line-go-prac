@@ -14,11 +14,11 @@ d.lint:
 lint:
 	$(GOLANGCI_LINT) run ./...
 
-d.build:
-	$(DOCKER) build -f $(ROOT)/Dockerfile -t $(DOCKER_REPO)/line-bot-prac:$(TAG) $(ROOT)
-
 build:
 	cd $(ROOT) && $(GO) build -o $(DIST)/cmd ./cmd/main.go
+
+image:
+	$(DOCKER) build -f $(ROOT)/Dockerfile -t $(DOCKER_REPO)/line-bot-prac:$(TAG) $(ROOT)
 
 dc.run: d.build
 	$(DOCKER_COMPOSE) up
