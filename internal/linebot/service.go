@@ -35,16 +35,17 @@ func (s *echoService) HandleEvent(ctx context.Context, event *linebot.Event) err
 		switch message := event.Message.(type) {
 		case *linebot.TextMessage:
 			// store message
-			s.messageDAO.Store(ctx, &dao.Message{
+			if err := s.messageDAO.Store(ctx, &dao.Message{
 				MessageID: message.ID,
 				SenderID:  event.Source.UserID,
 				Text:      message.Text,
 				CreatedAt: event.Timestamp,
-			})
+			}); err != nil {
+				return fmt.Errorf("failed to store message: %w", err)
+			}
 
 			responseMessage := linebot.NewTextMessage(message.Text)
-			_, err := s.linebotClient.ReplyMessage(event.ReplyToken, responseMessage).Do()
-			if err != nil {
+			if _, err := s.linebotClient.ReplyMessage(event.ReplyToken, responseMessage).Do(); err != nil {
 				return fmt.Errorf("failed to reply message: %w", err)
 			}
 		}
