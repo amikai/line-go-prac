@@ -9,9 +9,12 @@ The line bot will echo your text message.
 ## Built With
 The following are the packages used in this Golang project.
 
-- [gin-gonic](https://github.com/gin-gonic/gin): as framework
-- [go-migrate](https://github.com/golang-migrate/migrate): to create mongo collections.
+- [gin-gonic](https://github.com/gin-gonic/gin): as http framework
+- [go-migrate](https://github.com/golang-migrate/migrate): to create mongo collections
+- [cobra](https://github.com/spf13/cobra): to create subcommands
+- [viper](https://github.com/spf13/viper): to read environment variables and config file.
 - [golangci](https://github.com/golangci/golangci-lint): to check the style
+
 
 ## Setup line bot server 
 Before starting this program, please make sure that your docker is running.
