@@ -4,8 +4,11 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 
 	"github.com/amikai/line-go-prac/config"
 	"github.com/amikai/line-go-prac/internal/dao"
@@ -76,7 +79,29 @@ func runBot(_ *cobra.Command, _ []string) error {
 		linebotGroup.GET("/user/:userID", linebotGinHandler.GetUserByID)
 	}
 
-	http.ListenAndServe(":9999", router)
+	// gracefully shutdown. See https://pkg.go.dev/net/http#Server.Shutdown
+	srv := http.Server{
+		Addr:    ":9999",
+		Handler: router,
+	}
+
+	idleConnsClosed := make(chan struct{})
+	go func() {
+		sigint := make(chan os.Signal, 1)
+		signal.Notify(sigint, os.Interrupt)
+		<-sigint
+
+		if err := srv.Shutdown(context.Background()); err != nil {
+			logger.Error("Http server shutdown", zap.Error(err))
+		}
+		close(idleConnsClosed)
+	}()
+
+	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+		logger.Fatal("HTTP server ListenAndServe", zap.Error(err))
+	}
+
+	<-idleConnsClosed
 
 	return nil
 }
